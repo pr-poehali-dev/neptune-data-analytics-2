@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Mail, Phone, MapPin, Send, CheckCircle, Loader2 } from "lucide-react"
 
-const SEND_CONTACT_URL = "https://functions.poehali.dev/bb0bc281-c5d5-4f2c-a4e8-39f482fc9bf8"
+const SEND_CONTACT_URL = "https://functions.poehali.dev/36c27d43-6516-4fc7-92d8-36b5847cd220"
 
 export function ContactSection() {
   const [formData, setFormData] = useState({

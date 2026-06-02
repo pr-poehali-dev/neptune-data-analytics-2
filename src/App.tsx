@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { usePageTracker } from "@/hooks/usePageTracker";
+import { useLocation } from "react-router-dom";
+import Icon from "@/components/ui/icon";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
@@ -16,9 +18,25 @@ import SupportPage from "./pages/SupportPage";
 
 const queryClient = new QueryClient();
 
+function SupportButton() {
+  const location = useLocation()
+  if (location.pathname === '/support') return null
+  return (
+    <a
+      href="/support"
+      title="Техподдержка"
+      className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 flex items-center justify-center"
+    >
+      <Icon name="MessageCircleQuestion" size={24} fallback="MessageCircle" />
+    </a>
+  )
+}
+
 function AppRoutes() {
   usePageTracker()
   return (
+    <>
+    <SupportButton />
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<AuthPage />} />
@@ -29,6 +47,7 @@ function AppRoutes() {
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </>
   )
 }
 

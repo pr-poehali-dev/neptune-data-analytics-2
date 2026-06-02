@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { api } from '@/lib/api'
 import { Logo } from '@/components/Logo'
@@ -85,7 +85,15 @@ export default function AdminPage() {
             <a href="/"><Logo /></a>
             <Badge variant="default" className="text-xs">Админ</Badge>
           </div>
-          <Button variant="outline" size="sm" onClick={handleLogout}>Выйти</Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/admin/analytics">
+                <Icon name="BarChart2" className="mr-1 h-3 w-3" />
+                Аналитика
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleLogout}>Выйти</Button>
+          </div>
         </div>
       </nav>
 

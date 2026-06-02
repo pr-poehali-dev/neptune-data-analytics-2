@@ -38,6 +38,18 @@ const pricingTiers = [
     ],
     highlighted: false,
   },
+  {
+    name: "Сайт",
+    price: "6 000",
+    features: [
+      "Разработка сайта любой сложности",
+      "Лендинг, корпоративный сайт, магазин",
+      "Современный адаптивный дизайн",
+      "Быстрая загрузка на всех устройствах",
+      "Поддержка и сопровождение",
+    ],
+    highlighted: false,
+  },
 ]
 
 export function PricingSection() {
@@ -65,7 +77,7 @@ export function PricingSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {pricingTiers.map((tier, index) => (
             <Card
               key={index}

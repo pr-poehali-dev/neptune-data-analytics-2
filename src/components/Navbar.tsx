@@ -1,6 +1,7 @@
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { Logo } from "@/components/Logo"
 import { MobileMenu } from "@/components/MobileMenu"
+import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 
 export function Navbar() {
@@ -45,6 +46,9 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" asChild className="hidden md:flex">
+              <a href="/auth">Личный кабинет</a>
+            </Button>
             <ThemeToggle />
             <MobileMenu />
           </div>

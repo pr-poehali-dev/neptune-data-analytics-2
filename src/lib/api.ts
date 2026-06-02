@@ -1,0 +1,37 @@
+const AUTH_URL = 'https://functions.poehali.dev/d179e559-ae21-48c6-a638-7ed0d61253a5'
+const ORDERS_URL = 'https://functions.poehali.dev/c4c44717-258f-405c-8b37-7515595dc59d'
+const CHAT_URL = 'https://functions.poehali.dev/ebf9a9d9-0998-45da-aba0-8cb9274c6742'
+
+function req(url: string, method = 'GET', body?: object) {
+  return fetch(url, {
+    method,
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  }).then(r => r.json())
+}
+
+export const api = {
+  auth: {
+    me: () => req(AUTH_URL),
+    register: (data: { email: string; password: string; name: string }) =>
+      req(`${AUTH_URL}/register`, 'POST', data),
+    login: (data: { email: string; password: string }) =>
+      req(`${AUTH_URL}/login`, 'POST', data),
+    logout: () => req(`${AUTH_URL}/logout`, 'POST'),
+  },
+  orders: {
+    list: () => req(ORDERS_URL),
+    create: (data: { title: string; description: string }) =>
+      req(ORDERS_URL, 'POST', data),
+    setStatus: (id: number, status: string) =>
+      req(`${ORDERS_URL}/${id}/status`, 'PUT', { status }),
+    setFile: (id: number, file_url: string) =>
+      req(`${ORDERS_URL}/${id}/file`, 'PUT', { file_url }),
+  },
+  chat: {
+    messages: (orderId: number) => req(`${CHAT_URL}/${orderId}`),
+    send: (orderId: number, text: string) =>
+      req(`${CHAT_URL}/${orderId}`, 'POST', { text }),
+  },
+}

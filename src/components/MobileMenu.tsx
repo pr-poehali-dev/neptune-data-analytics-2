@@ -38,6 +38,13 @@ export function MobileMenu() {
               {item.label}
             </a>
           ))}
+          <a
+            href="/auth"
+            onClick={() => setOpen(false)}
+            className="text-base font-medium text-primary hover:bg-primary/5 transition-all py-3 px-4 rounded-lg mt-2"
+          >
+            Личный кабинет
+          </a>
         </nav>
       </SheetContent>
     </Sheet>

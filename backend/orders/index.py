@@ -1,0 +1,106 @@
+import json
+import os
+import psycopg2
+
+
+def get_db():
+    return psycopg2.connect(os.environ['DATABASE_URL'])
+
+
+def get_user_by_session(conn, session_id: str):
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT u.id, u.email, u.name, u.role FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id = %s AND s.expires_at > NOW()",
+        (session_id,)
+    )
+    row = cur.fetchone()
+    if row:
+        return {'id': row[0], 'email': row[1], 'name': row[2], 'role': row[3]}
+    return None
+
+
+def get_session_id(event):
+    cookie_header = event.get('headers', {}).get('x-cookie', '')
+    for part in cookie_header.split(';'):
+        part = part.strip()
+        if part.startswith('session='):
+            return part[8:]
+    return None
+
+
+def handler(event: dict, context) -> dict:
+    """Управление заказами: создание, просмотр, смена статуса, загрузка файла."""
+
+    cors = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, X-Cookie',
+    }
+
+    if event.get('httpMethod') == 'OPTIONS':
+        return {'statusCode': 200, 'headers': {**cors, 'Access-Control-Max-Age': '86400'}, 'body': ''}
+
+    conn = get_db()
+    session_id = get_session_id(event)
+    if not session_id:
+        return {'statusCode': 401, 'headers': cors, 'body': json.dumps({'error': 'Не авторизован'}, ensure_ascii=False)}
+
+    user = get_user_by_session(conn, session_id)
+    if not user:
+        return {'statusCode': 401, 'headers': cors, 'body': json.dumps({'error': 'Сессия истекла'}, ensure_ascii=False)}
+
+    method = event.get('httpMethod')
+    path = event.get('path', '')
+    body = json.loads(event.get('body') or '{}')
+    cur = conn.cursor()
+
+    # GET /orders — список заказов
+    if method == 'GET' and not any(x.isdigit() for x in path.split('/')):
+        if user['role'] == 'admin':
+            cur.execute("SELECT o.id, o.title, o.description, o.status, o.file_url, o.created_at, o.updated_at, u.name, u.email FROM orders o JOIN users u ON u.id = o.user_id ORDER BY o.created_at DESC")
+        else:
+            cur.execute("SELECT o.id, o.title, o.description, o.status, o.file_url, o.created_at, o.updated_at, u.name, u.email FROM orders o JOIN users u ON u.id = o.user_id WHERE o.user_id = %s ORDER BY o.created_at DESC", (user['id'],))
+        rows = cur.fetchall()
+        orders = [{'id': r[0], 'title': r[1], 'description': r[2], 'status': r[3], 'file_url': r[4], 'created_at': str(r[5]), 'updated_at': str(r[6]), 'client_name': r[7], 'client_email': r[8]} for r in rows]
+        return {'statusCode': 200, 'headers': cors, 'body': json.dumps(orders, ensure_ascii=False)}
+
+    # POST /orders — создать заказ
+    if method == 'POST' and 'status' not in path and 'file' not in path:
+        title = body.get('title', '').strip()
+        description = body.get('description', '').strip()
+        if not title:
+            return {'statusCode': 400, 'headers': cors, 'body': json.dumps({'error': 'Укажите название заказа'}, ensure_ascii=False)}
+        cur.execute("INSERT INTO orders (user_id, title, description) VALUES (%s, %s, %s) RETURNING id, title, description, status, created_at", (user['id'], title, description))
+        row = cur.fetchone()
+        conn.commit()
+        order = {'id': row[0], 'title': row[1], 'description': row[2], 'status': row[3], 'created_at': str(row[4])}
+        return {'statusCode': 200, 'headers': cors, 'body': json.dumps(order, ensure_ascii=False)}
+
+    # PUT /orders/{id}/status — сменить статус (только админ)
+    if method == 'PUT' and 'status' in path:
+        if user['role'] != 'admin':
+            return {'statusCode': 403, 'headers': cors, 'body': json.dumps({'error': 'Доступ запрещён'}, ensure_ascii=False)}
+        parts = path.split('/')
+        order_id = next((p for p in parts if p.isdigit()), None)
+        status = body.get('status', '')
+        allowed = ['new', 'in_progress', 'review', 'done']
+        if status not in allowed:
+            return {'statusCode': 400, 'headers': cors, 'body': json.dumps({'error': 'Недопустимый статус'}, ensure_ascii=False)}
+        cur.execute("UPDATE orders SET status = %s, updated_at = NOW() WHERE id = %s", (status, order_id))
+        conn.commit()
+        return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'success': True})}
+
+    # PUT /orders/{id}/file — загрузить файл (только админ)
+    if method == 'PUT' and 'file' in path:
+        if user['role'] != 'admin':
+            return {'statusCode': 403, 'headers': cors, 'body': json.dumps({'error': 'Доступ запрещён'}, ensure_ascii=False)}
+        parts = path.split('/')
+        order_id = next((p for p in parts if p.isdigit()), None)
+        file_url = body.get('file_url', '').strip()
+        if not file_url:
+            return {'statusCode': 400, 'headers': cors, 'body': json.dumps({'error': 'Укажите ссылку на файл'}, ensure_ascii=False)}
+        cur.execute("UPDATE orders SET file_url = %s, updated_at = NOW() WHERE id = %s", (file_url, order_id))
+        conn.commit()
+        return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'success': True})}
+
+    return {'statusCode': 404, 'headers': cors, 'body': json.dumps({'error': 'Not found'})}

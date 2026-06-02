@@ -1,0 +1,23 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Get user without session",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 401
+    },
+    {
+      "name": "Register missing fields",
+      "method": "POST",
+      "path": "/register",
+      "body": {"email": "", "password": "", "name": ""},
+      "expectedStatus": 400
+    }
+  ]
+}

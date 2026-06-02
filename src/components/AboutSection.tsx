@@ -11,9 +11,9 @@ const values = [
 ]
 
 const stats = [
-  { number: "200+", label: "Выполненных работ" },
-  { number: "150+", label: "Довольных клиентов" },
-  { number: "5+", label: "Лет на рынке" },
+  { number: "100+", label: "Выполненных работ" },
+  { number: "70+", label: "Довольных клиентов" },
+  { number: "3+", label: "Года на рынке" },
   { number: "2 часа", label: "Минимальный срок" },
 ]
 

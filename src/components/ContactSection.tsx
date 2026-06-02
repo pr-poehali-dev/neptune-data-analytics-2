@@ -4,7 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Mail, Phone, MapPin, Send } from "lucide-react"
+import { Mail, Phone, MapPin, Send, CheckCircle, Loader2 } from "lucide-react"
+
+const SEND_CONTACT_URL = "https://functions.poehali.dev/bb0bc281-c5d5-4f2c-a4e8-39f482fc9bf8"
 
 export function ContactSection() {
   const [formData, setFormData] = useState({
@@ -13,11 +15,26 @@ export function ContactSection() {
     phone: "",
     message: "",
   })
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("[v0] Form submitted:", formData)
-    // Handle form submission
+    setStatus("loading")
+    try {
+      const res = await fetch(SEND_CONTACT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
+      if (res.ok) {
+        setStatus("success")
+        setFormData({ name: "", email: "", phone: "", message: "" })
+      } else {
+        setStatus("error")
+      }
+    } catch {
+      setStatus("error")
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -52,72 +69,83 @@ export function ContactSection() {
                 <CardTitle className="text-2xl">Напишите нам</CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {status === "success" ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center gap-4">
+                    <CheckCircle className="h-16 w-16 text-primary" />
+                    <h3 className="text-2xl font-bold">Заявка отправлена!</h3>
+                    <p className="text-muted-foreground">Мы получили ваше сообщение и свяжемся с вами в ближайшее время.</p>
+                    <Button variant="outline" onClick={() => setStatus("idle")}>Отправить ещё</Button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label htmlFor="name" className="text-sm font-medium">Имя *</label>
+                        <Input
+                          id="name"
+                          name="name"
+                          value={formData.name}
+                          onChange={handleChange}
+                          placeholder="Ваше имя"
+                          required
+                          disabled={status === "loading"}
+                          className="transition-all focus:scale-[1.02]"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label htmlFor="email" className="text-sm font-medium">E-mail *</label>
+                        <Input
+                          id="email"
+                          name="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={handleChange}
+                          placeholder="your@email.ru"
+                          required
+                          disabled={status === "loading"}
+                          className="transition-all focus:scale-[1.02]"
+                        />
+                      </div>
+                    </div>
                     <div className="space-y-2">
-                      <label htmlFor="name" className="text-sm font-medium">
-                        Имя *
-                      </label>
+                      <label htmlFor="phone" className="text-sm font-medium">Телефон</label>
                       <Input
-                        id="name"
-                        name="name"
-                        value={formData.name}
+                        id="phone"
+                        name="phone"
+                        type="tel"
+                        value={formData.phone}
                         onChange={handleChange}
-                        placeholder="Ваше имя"
-                        required
+                        placeholder="+7 900 123-45-67"
+                        disabled={status === "loading"}
                         className="transition-all focus:scale-[1.02]"
                       />
                     </div>
                     <div className="space-y-2">
-                      <label htmlFor="email" className="text-sm font-medium">
-                        E-mail *
-                      </label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        value={formData.email}
+                      <label htmlFor="message" className="text-sm font-medium">Сообщение *</label>
+                      <Textarea
+                        id="message"
+                        name="message"
+                        value={formData.message}
                         onChange={handleChange}
-                        placeholder="your@email.ru"
+                        placeholder="Опишите задачу: тип проекта, объём, сроки, особые требования..."
+                        rows={6}
                         required
+                        disabled={status === "loading"}
                         className="transition-all focus:scale-[1.02]"
                       />
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="phone" className="text-sm font-medium">
-                      Телефон
-                    </label>
-                    <Input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      placeholder="+7 900 123-45-67"
-                      className="transition-all focus:scale-[1.02]"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="message" className="text-sm font-medium">
-                      Сообщение *
-                    </label>
-                    <Textarea
-                      id="message"
-                      name="message"
-                      value={formData.message}
-                      onChange={handleChange}
-                      placeholder="Опишите задачу: тип проекта, объём, сроки, особые требования..."
-                      rows={6}
-                      required
-                      className="transition-all focus:scale-[1.02]"
-                    />
-                  </div>
-                  <Button type="submit" size="lg" className="w-full sm:w-auto group">
-                    <Send className="mr-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                    Отправить
-                  </Button>
-                </form>
+                    {status === "error" && (
+                      <p className="text-sm text-destructive">Ошибка отправки. Попробуйте ещё раз или напишите напрямую на почту.</p>
+                    )}
+                    <Button type="submit" size="lg" className="w-full sm:w-auto group" disabled={status === "loading"}>
+                      {status === "loading" ? (
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Отправляем...</>
+                      ) : (
+                        <><Send className="mr-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />Отправить</>
+                      )}
+                    </Button>
+                  </form>
+                )}
               </CardContent>
             </Card>
           </div>

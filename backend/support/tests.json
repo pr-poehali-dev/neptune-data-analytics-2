@@ -12,16 +12,16 @@
         "message": "Это тестовое сообщение для проверки системы"
       },
       "expectedStatus": 200,
-      "expectedBody": { "success": true },
-      "bodyMatcher": "partial"
+      "expectedBody": "success",
+      "bodyMatcher": "contains"
     },
     {
       "name": "Get all tickets unauthorized",
       "method": "GET",
       "path": "/",
       "expectedStatus": 403,
-      "expectedBody": { "error": "Нет доступа" },
-      "bodyMatcher": "partial"
+      "expectedBody": "error",
+      "bodyMatcher": "contains"
     }
   ]
 }

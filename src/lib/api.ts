@@ -2,6 +2,7 @@ const AUTH_URL = 'https://functions.poehali.dev/d179e559-ae21-48c6-a638-7ed0d612
 const ORDERS_URL = 'https://functions.poehali.dev/c4c44717-258f-405c-8b37-7515595dc59d'
 const CHAT_URL = 'https://functions.poehali.dev/ebf9a9d9-0998-45da-aba0-8cb9274c6742'
 const ANALYTICS_URL = 'https://functions.poehali.dev/04dc4b98-2045-491a-9095-e1af18d51efc'
+const SUPPORT_URL = 'https://functions.poehali.dev/872fc325-5a92-4d24-a6a7-4237631de297'
 
 export function getSessionId(): string {
   return localStorage.getItem('session_id') || ''
@@ -47,6 +48,20 @@ export const api = {
     messages: (orderId: number) => req(`${CHAT_URL}?order_id=${orderId}`),
     send: (orderId: number, text: string) =>
       req(CHAT_URL, 'POST', { order_id: orderId, text }),
+  },
+  support: {
+    create: (data: { name: string; email: string; subject: string; message: string }) =>
+      fetch(SUPPORT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, action: 'create' }),
+      }).then(r => r.json()),
+    list: (status?: string) => req(status ? `${SUPPORT_URL}?status=${status}` : SUPPORT_URL),
+    get: (ticketId: number) => req(`${SUPPORT_URL}?ticket_id=${ticketId}`),
+    reply: (ticketId: number, text: string) =>
+      req(SUPPORT_URL, 'POST', { action: 'reply', ticket_id: ticketId, text }),
+    setStatus: (ticketId: number, status: string) =>
+      req(SUPPORT_URL, 'PUT', { ticket_id: ticketId, status }),
   },
   analytics: {
     track: (path: string) => {

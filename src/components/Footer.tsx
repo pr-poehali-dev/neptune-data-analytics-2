@@ -33,6 +33,11 @@ export function Footer() {
                   Контакты
                 </a>
               </li>
+              <li>
+                <a href="/support" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Техподдержка
+                </a>
+              </li>
             </ul>
           </div>
 

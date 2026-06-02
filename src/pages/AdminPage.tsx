@@ -6,6 +6,7 @@ import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import Icon from '@/components/ui/icon'
@@ -22,10 +23,19 @@ type Order = {
   file_url: string | null; created_at: string; client_name: string; client_email: string
 }
 type Message = { id: number; text: string; created_at: string; sender_name: string; sender_role: string }
+type Ticket = { id: number; name: string; email: string; subject: string; status: string; created_at: string }
+type Reply = { id: number; text: string; is_admin: boolean; created_at: string }
+
+const TICKET_STATUS: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
+  open: { label: 'Открыт', variant: 'secondary' },
+  answered: { label: 'Отвечен', variant: 'default' },
+  closed: { label: 'Закрыт', variant: 'outline' },
+}
 
 export default function AdminPage() {
   const { user, loading, logout } = useAuth()
   const navigate = useNavigate()
+  const [tab, setTab] = useState<'orders' | 'support'>('orders')
   const [orders, setOrders] = useState<Order[]>([])
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -33,6 +43,12 @@ export default function AdminPage() {
   const [fileUrl, setFileUrl] = useState('')
   const [showFileInput, setShowFileInput] = useState(false)
   const chatRef = useRef<HTMLDivElement>(null)
+  // support
+  const [tickets, setTickets] = useState<Ticket[]>([])
+  const [selectedTicket, setSelectedTicket] = useState<Ticket & { message?: string } | null>(null)
+  const [ticketReplies, setTicketReplies] = useState<Reply[]>([])
+  const [replyText, setReplyText] = useState('')
+  const ticketChatRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!loading && !user) navigate('/auth')
@@ -42,6 +58,44 @@ export default function AdminPage() {
   useEffect(() => {
     if (user) api.orders.list().then(data => setOrders(Array.isArray(data) ? data : []))
   }, [user])
+
+  useEffect(() => {
+    if (user && tab === 'support') api.support.list().then(data => setTickets(data.tickets || []))
+  }, [user, tab])
+
+  useEffect(() => {
+    if (selectedTicket) {
+      api.support.get(selectedTicket.id).then(data => {
+        setTicketReplies(data.replies || [])
+        if (data.ticket?.message) {
+          setSelectedTicket(prev => prev ? { ...prev, message: data.ticket.message } : prev)
+        }
+      })
+    }
+  }, [selectedTicket?.id])
+
+  useEffect(() => {
+    if (ticketChatRef.current) ticketChatRef.current.scrollTop = ticketChatRef.current.scrollHeight
+  }, [ticketReplies])
+
+  const handleReply = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedTicket || !replyText.trim()) return
+    const res = await api.support.reply(selectedTicket.id, replyText)
+    if (res.success) {
+      setReplyText('')
+      const data = await api.support.get(selectedTicket.id)
+      setTicketReplies(data.replies || [])
+      setTickets(prev => prev.map(t => t.id === selectedTicket.id ? { ...t, status: 'answered' } : t))
+      setSelectedTicket(prev => prev ? { ...prev, status: 'answered' } : prev)
+    }
+  }
+
+  const handleTicketStatus = async (ticketId: number, status: string) => {
+    await api.support.setStatus(ticketId, status)
+    setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, status } : t))
+    if (selectedTicket?.id === ticketId) setSelectedTicket(prev => prev ? { ...prev, status } : prev)
+  }
 
   useEffect(() => {
     if (selectedOrder) api.chat.messages(selectedOrder.id).then(data => setMessages(Array.isArray(data) ? data : []))
@@ -98,12 +152,122 @@ export default function AdminPage() {
       </nav>
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Панель управления</h1>
-          <p className="text-muted-foreground mt-1">Всего заказов: {orders.length}</p>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Панель управления</h1>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="flex gap-2 mb-6 border-b border-border">
+          <button
+            onClick={() => setTab('orders')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === 'orders' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+          >
+            <Icon name="ClipboardList" size={14} className="inline mr-1.5" />
+            Заказы ({orders.length})
+          </button>
+          <button
+            onClick={() => setTab('support')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === 'support' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+          >
+            <Icon name="MessageCircle" size={14} className="inline mr-1.5" />
+            Поддержка {tickets.filter(t => t.status === 'open').length > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
+                {tickets.filter(t => t.status === 'open').length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {tab === 'support' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              {tickets.length === 0 && (
+                <Card className="border-dashed">
+                  <CardContent className="py-12 text-center text-muted-foreground">
+                    <Icon name="Inbox" className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                    <p>Обращений пока нет</p>
+                  </CardContent>
+                </Card>
+              )}
+              {tickets.map(ticket => {
+                const s = TICKET_STATUS[ticket.status] || { label: ticket.status, variant: 'secondary' as const }
+                return (
+                  <Card
+                    key={ticket.id}
+                    className={`cursor-pointer transition-all hover:border-primary ${selectedTicket?.id === ticket.id ? 'border-primary' : ''}`}
+                    onClick={() => setSelectedTicket(ticket)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold truncate text-sm">#{ticket.id} {ticket.subject}</p>
+                          <p className="text-xs text-muted-foreground">{ticket.name} · {ticket.email}</p>
+                          <p className="text-xs text-muted-foreground">{new Date(ticket.created_at).toLocaleDateString('ru')}</p>
+                        </div>
+                        <Badge variant={s.variant}>{s.label}</Badge>
+                      </div>
+                      <Select value={ticket.status} onValueChange={v => handleTicketStatus(ticket.id, v)}>
+                        <SelectTrigger className="h-8 text-xs" onClick={e => e.stopPropagation()}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="open">Открыт</SelectItem>
+                          <SelectItem value="answered">Отвечен</SelectItem>
+                          <SelectItem value="closed">Закрыт</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+
+            <div>
+              {selectedTicket ? (
+                <Card className="flex flex-col h-[520px]">
+                  <CardHeader className="pb-3 border-b">
+                    <CardTitle className="text-sm font-semibold truncate">
+                      #{selectedTicket.id} {selectedTicket.subject}
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground">{selectedTicket.name} · {selectedTicket.email}</p>
+                  </CardHeader>
+                  <div ref={ticketChatRef} className="flex-1 overflow-y-auto p-4 space-y-3">
+                    <div className="bg-muted rounded-2xl px-4 py-3 text-sm">
+                      <p className="text-xs font-semibold mb-1 opacity-70">{selectedTicket.name} (клиент)</p>
+                      <p>{selectedTicket.message || '...'}</p>
+                    </div>
+                    {ticketReplies.map(reply => (
+                      <div key={reply.id} className={`flex ${reply.is_admin ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${reply.is_admin ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                          {!reply.is_admin && <p className="text-xs font-semibold mb-1 opacity-70">Клиент</p>}
+                          <p>{reply.text}</p>
+                          <p className="text-xs mt-1 opacity-60">{new Date(reply.created_at).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <form onSubmit={handleReply} className="p-3 border-t flex gap-2">
+                    <Textarea
+                      value={replyText}
+                      onChange={e => setReplyText(e.target.value)}
+                      placeholder="Ответить на обращение..."
+                      className="flex-1 min-h-[40px] max-h-[100px] resize-none"
+                      rows={1}
+                    />
+                    <Button type="submit" size="icon" className="self-end"><Icon name="Send" className="h-4 w-4" /></Button>
+                  </form>
+                </Card>
+              ) : (
+                <Card className="h-[520px] flex items-center justify-center border-dashed">
+                  <p className="text-muted-foreground text-sm">Выберите обращение</p>
+                </Card>
+              )}
+            </div>
+          </div>
+        )}
+
+        {tab === 'orders' && <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-3">
             {orders.length === 0 && (
               <Card className="border-dashed">
@@ -204,7 +368,7 @@ export default function AdminPage() {
               </Card>
             )}
           </div>
-        </div>
+        </div>}
       </div>
     </div>
   )

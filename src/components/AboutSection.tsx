@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { CheckCircle2, Sparkles } from "lucide-react"
 
 const values = [
-  { title: "Срок от 1 дня", description: "Работаем быстро — большинство заказов выполняем за 1–3 дня" },
+  { title: "Срок от 2 часов", description: "Работаем быстро — большинство заказов выполняем за 2 часа–1 день" },
   { title: "Любая сложность", description: "Беремся за простые и сложные проекты любого объёма и формата" },
   { title: "Прозрачные цены", description: "Фиксированная стоимость без скрытых платежей и неприятных сюрпризов" },
   { title: "Индивидуальный подход", description: "Погружаемся в задачу и делаем именно то, что нужно вам" },
@@ -14,7 +14,7 @@ const stats = [
   { number: "200+", label: "Выполненных работ" },
   { number: "150+", label: "Довольных клиентов" },
   { number: "5+", label: "Лет на рынке" },
-  { number: "1 день", label: "Минимальный срок" },
+  { number: "2 часа", label: "Минимальный срок" },
 ]
 
 export function AboutSection() {

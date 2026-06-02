@@ -1,43 +1,39 @@
 import { Card, CardContent } from "@/components/ui/card"
-import { ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import Icon from "@/components/ui/icon"
 
 const projects = [
   {
-    title: "Умный помощник по выборам",
-    category: "AI/ML и веб-разработка",
-    image: "/omgekeerdestemwijzer-banner.png",
+    title: "Питч-дек для IT-стартапа",
+    category: "Инвестиционная презентация",
+    image: "/creative-portfolio-website.png",
     description:
-      "AI-приложение для выборов. Пользователи задают вопросы о позициях партий и получают 100% фактические ответы из официальных программ с использованием RAG-технологии.",
-    url: "https://de-omgekeerde-stemwijzer.onrender.com/",
-    tags: ["Next.js", "AI/ML", "RAG", "TypeScript"],
+      "20-слайдовый питч-дек для привлечения раунда A. Включает анализ рынка, финансовую модель, roadmap и описание команды. Клиент привлёк финансирование на $500K.",
+    tags: ["Питч-дек", "IT", "Инвестиции", "Финмодель"],
   },
   {
-    title: "Автомойка Tahsin",
-    category: "Веб-дизайн и разработка",
-    image: "/autopoetsbedrijf-tahsin-project.png",
+    title: "Бизнес-план ресторана",
+    category: "Бизнес-план",
+    image: "/restaurant-website-design.png",
     description:
-      "Профессиональный сайт для автомойки с 20-летним опытом. Полная презентация услуг, автомойки и гаража с современным адаптивным дизайном.",
-    url: "https://www.autopoetsbedrijftahsin.nl/",
-    tags: ["React", "Next.js", "Tailwind CSS"],
+      "Полный бизнес-план для открытия ресторана: концепция, анализ конкурентов, финансовые прогнозы на 3 года, план маркетинга. Использован для получения кредита в банке.",
+    tags: ["Бизнес-план", "HoReCa", "Банк", "Финансы"],
   },
   {
-    title: "Кадровое агентство CAN",
-    category: "Веб-разработка",
-    image: "/can-uitzendbureau-project.png",
+    title: "Корпоративная презентация",
+    category: "Корпоративная презентация",
+    image: "/professional-corporate-website.png",
     description:
-      "Кадровое агентство с 30-летним опытом в садоводческом секторе. Сайт с обзором услуг и прямыми контактами для работодателей и соискателей.",
-    url: "https://canbv.nl/",
-    tags: ["Next.js", "React", "Tailwind CSS"],
+      "Презентация компании для выхода на новые рынки. Включает историю бренда, портфолио проектов, кейсы и коммерческое предложение. 45 слайдов в фирменном стиле.",
+    tags: ["Корпоратив", "Брендинг", "B2B", "Продажи"],
   },
   {
-    title: "Портфолио Murat Sahin",
-    category: "Портфолио-сайт",
-    image: "/murat-sahin-portfolio.png",
+    title: "Маркетинг-кит для агентства",
+    category: "Маркетинговые материалы",
+    image: "/modern-ecommerce-website.png",
     description:
-      "Профессиональное портфолио full-stack разработчика. Демонстрация проектов, навыков и опыта с современным минималистичным дизайном и темной темой.",
-    url: "https://murat-sahin-dev.vercel.app/",
-    tags: ["Next.js", "TypeScript", "Tailwind CSS", ".NET Core"],
+      "Полный комплект маркетинговых материалов: презентация услуг, коммерческое предложение, кейс-стади и one-pager. Повысил конверсию на переговорах на 35%.",
+    tags: ["Маркетинг-кит", "Агентство", "КП", "Кейсы"],
   },
 ]
 
@@ -46,9 +42,9 @@ export function PortfolioSection() {
     <section id="portfolio" className="py-20 px-4 sm:px-6 lg:px-8">
       <div className="container mx-auto max-w-7xl">
         <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 text-balance">Наше портфолио</h2>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 text-balance">Примеры наших работ</h2>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto text-pretty leading-relaxed">
-            Ознакомьтесь с подборкой наших последних проектов и узнайте, как мы помогаем бизнесу расти с помощью мощных цифровых решений.
+            Посмотрите, какие проекты мы уже реализовали — от стартап-питчей до корпоративных презентаций и бизнес-планов для банков.
           </p>
         </div>
 
@@ -69,9 +65,9 @@ export function PortfolioSection() {
                     size="sm"
                     variant="secondary"
                     className="gap-2"
-                    onClick={() => window.open(project.url, "_blank")}
+                    onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
                   >
-                    Открыть проект <ExternalLink className="h-4 w-4" />
+                    Заказать похожий <Icon name="ArrowRight" className="h-4 w-4" />
                   </Button>
                 </div>
               </div>

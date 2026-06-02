@@ -38,10 +38,10 @@ export function ContactSection() {
             Контакты
           </div>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 text-balance">
-            Давайте <span className="text-primary">создавать вместе</span>
+            Давайте <span className="text-primary">обсудим проект</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto text-pretty leading-relaxed">
-            Готовы воплотить ваши цифровые амбиции? Свяжитесь с нами без обязательств и узнайте, чем мы можем помочь.
+            Опишите задачу — и мы предложим решение, сроки и стоимость. Консультация бесплатна и ни к чему не обязывает.
           </p>
         </div>
 
@@ -107,7 +107,7 @@ export function ContactSection() {
                       name="message"
                       value={formData.message}
                       onChange={handleChange}
-                      placeholder="Расскажите о вашем проекте..."
+                      placeholder="Опишите задачу: тип проекта, объём, сроки, особые требования..."
                       rows={6}
                       required
                       className="transition-all focus:scale-[1.02]"

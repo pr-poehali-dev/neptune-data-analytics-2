@@ -6,7 +6,7 @@ export function Logo({ className = "" }: { className?: string }) {
         <span className="text-2xl font-bold text-primary">&lt;</span>
         <span className="text-2xl font-bold text-primary">&gt;</span>
         {/* Brand text */}
-        <span className="text-xl font-semibold tracking-tight ml-1">CodeCraft</span>
+        <span className="text-xl font-semibold tracking-tight ml-1">ProSlide</span>
       </div>
     </div>
   )

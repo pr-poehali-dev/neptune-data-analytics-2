@@ -1,0 +1,27 @@
+{
+  "tests": [
+    {
+      "name": "Create ticket",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "action": "create",
+        "name": "Иван Иванов",
+        "email": "test@test.com",
+        "subject": "Тестовый вопрос",
+        "message": "Это тестовое сообщение для проверки системы"
+      },
+      "expectedStatus": 200,
+      "expectedBody": { "success": true },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Get all tickets unauthorized",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 403,
+      "expectedBody": { "error": "Нет доступа" },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

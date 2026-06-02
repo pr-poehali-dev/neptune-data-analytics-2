@@ -40,11 +40,11 @@ export default function AdminPage() {
   }, [user, loading, navigate])
 
   useEffect(() => {
-    if (user) api.orders.list().then(setOrders)
+    if (user) api.orders.list().then(data => setOrders(Array.isArray(data) ? data : []))
   }, [user])
 
   useEffect(() => {
-    if (selectedOrder) api.chat.messages(selectedOrder.id).then(setMessages)
+    if (selectedOrder) api.chat.messages(selectedOrder.id).then(data => setMessages(Array.isArray(data) ? data : []))
   }, [selectedOrder])
 
   useEffect(() => {

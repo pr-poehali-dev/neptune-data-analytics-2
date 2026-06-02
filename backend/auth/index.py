@@ -25,32 +25,30 @@ def get_user_by_session(conn, session_id: str):
     return None
 
 
+def get_session_id(event):
+    return event.get('headers', {}).get('x-session-id', '') or ''
+
+
 def handler(event: dict, context) -> dict:
     """Авторизация: регистрация, вход, выход, получение текущего пользователя."""
 
     cors = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, X-Cookie',
+        'Access-Control-Allow-Headers': 'Content-Type, X-Session-Id',
     }
 
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': {**cors, 'Access-Control-Max-Age': '86400'}, 'body': ''}
 
     method = event.get('httpMethod')
-    path = event.get('path', '').rstrip('/')
     body = json.loads(event.get('body') or '{}')
-
+    action = body.get('action', '')
     conn = get_db()
 
-    # Получить текущего пользователя
+    # GET — получить текущего пользователя по токену
     if method == 'GET':
-        cookie_header = event.get('headers', {}).get('x-cookie', '')
-        session_id = None
-        for part in cookie_header.split(';'):
-            part = part.strip()
-            if part.startswith('session='):
-                session_id = part[8:]
+        session_id = get_session_id(event)
         if not session_id:
             return {'statusCode': 401, 'headers': cors, 'body': json.dumps({'error': 'Не авторизован'})}
         user = get_user_by_session(conn, session_id)
@@ -59,8 +57,7 @@ def handler(event: dict, context) -> dict:
         return {'statusCode': 200, 'headers': cors, 'body': json.dumps(user)}
 
     # Регистрация
-    action = body.get('action', '')
-    if method == 'POST' and (action == 'register' or 'register' in path):
+    if method == 'POST' and action == 'register':
         email = body.get('email', '').strip().lower()
         password = body.get('password', '').strip()
         name = body.get('name', '').strip()
@@ -81,14 +78,10 @@ def handler(event: dict, context) -> dict:
         session_id = secrets.token_hex(32)
         cur.execute("INSERT INTO sessions (id, user_id) VALUES (%s, %s)", (session_id, user['id']))
         conn.commit()
-        return {
-            'statusCode': 200,
-            'headers': {**cors, 'X-Set-Cookie': f'session={session_id}; Path=/; HttpOnly; Max-Age=2592000'},
-            'body': json.dumps(user)
-        }
+        return {'statusCode': 200, 'headers': cors, 'body': json.dumps({**user, 'session_id': session_id})}
 
     # Вход
-    if method == 'POST' and (action == 'login' or 'login' in path):
+    if method == 'POST' and action == 'login':
         email = body.get('email', '').strip().lower()
         password = body.get('password', '').strip()
         cur = conn.cursor()
@@ -100,28 +93,15 @@ def handler(event: dict, context) -> dict:
         session_id = secrets.token_hex(32)
         cur.execute("INSERT INTO sessions (id, user_id) VALUES (%s, %s)", (session_id, user['id']))
         conn.commit()
-        return {
-            'statusCode': 200,
-            'headers': {**cors, 'X-Set-Cookie': f'session={session_id}; Path=/; HttpOnly; Max-Age=2592000'},
-            'body': json.dumps(user)
-        }
+        return {'statusCode': 200, 'headers': cors, 'body': json.dumps({**user, 'session_id': session_id})}
 
     # Выход
-    if method == 'POST' and (action == 'logout' or 'logout' in path):
-        cookie_header = event.get('headers', {}).get('x-cookie', '')
-        session_id = None
-        for part in cookie_header.split(';'):
-            part = part.strip()
-            if part.startswith('session='):
-                session_id = part[8:]
+    if method == 'POST' and action == 'logout':
+        session_id = get_session_id(event)
         if session_id:
             cur = conn.cursor()
             cur.execute("UPDATE sessions SET expires_at = NOW() WHERE id = %s", (session_id,))
             conn.commit()
-        return {
-            'statusCode': 200,
-            'headers': {**cors, 'X-Set-Cookie': 'session=; Path=/; HttpOnly; Max-Age=0'},
-            'body': json.dumps({'success': True})
-        }
+        return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'success': True})}
 
     return {'statusCode': 404, 'headers': cors, 'body': json.dumps({'error': 'Not found'})}

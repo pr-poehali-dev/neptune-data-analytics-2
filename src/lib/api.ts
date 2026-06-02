@@ -2,11 +2,24 @@ const AUTH_URL = 'https://functions.poehali.dev/d179e559-ae21-48c6-a638-7ed0d612
 const ORDERS_URL = 'https://functions.poehali.dev/c4c44717-258f-405c-8b37-7515595dc59d'
 const CHAT_URL = 'https://functions.poehali.dev/ebf9a9d9-0998-45da-aba0-8cb9274c6742'
 
+export function getSessionId(): string {
+  return localStorage.getItem('session_id') || ''
+}
+export function setSessionId(id: string) {
+  localStorage.setItem('session_id', id)
+}
+export function clearSessionId() {
+  localStorage.removeItem('session_id')
+}
+
 function req(url: string, method = 'GET', body?: object) {
+  const sessionId = getSessionId()
   return fetch(url, {
     method,
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(sessionId ? { 'X-Session-Id': sessionId } : {}),
+    },
     body: body ? JSON.stringify(body) : undefined,
   }).then(r => r.json())
 }

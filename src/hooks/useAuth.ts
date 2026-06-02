@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { api } from '@/lib/api'
+import { api, setSessionId, clearSessionId } from '@/lib/api'
 
 export type User = { id: number; email: string; name: string; role: string }
 
@@ -17,19 +17,24 @@ export function useAuth() {
   const login = useCallback(async (email: string, password: string) => {
     const data = await api.auth.login({ email, password })
     if (data.error) throw new Error(data.error)
-    setUser(data)
-    return data
+    if (data.session_id) setSessionId(data.session_id)
+    const { session_id: _, ...user } = data
+    setUser(user)
+    return user
   }, [])
 
   const register = useCallback(async (email: string, password: string, name: string) => {
     const data = await api.auth.register({ email, password, name })
     if (data.error) throw new Error(data.error)
-    setUser(data)
-    return data
+    if (data.session_id) setSessionId(data.session_id)
+    const { session_id: _, ...user } = data
+    setUser(user)
+    return user
   }, [])
 
   const logout = useCallback(async () => {
     await api.auth.logout()
+    clearSessionId()
     setUser(null)
   }, [])
 

@@ -20,12 +20,7 @@ def get_user_by_session(conn, session_id: str):
 
 
 def get_session_id(event):
-    cookie_header = event.get('headers', {}).get('x-cookie', '')
-    for part in cookie_header.split(';'):
-        part = part.strip()
-        if part.startswith('session='):
-            return part[8:]
-    return None
+    return event.get('headers', {}).get('x-session-id', '') or ''
 
 
 def handler(event: dict, context) -> dict:
@@ -34,7 +29,7 @@ def handler(event: dict, context) -> dict:
     cors = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, X-Cookie',
+        'Access-Control-Allow-Headers': 'Content-Type, X-Session-Id',
     }
 
     if event.get('httpMethod') == 'OPTIONS':

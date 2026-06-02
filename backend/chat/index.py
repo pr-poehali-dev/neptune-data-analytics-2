@@ -50,14 +50,13 @@ def handler(event: dict, context) -> dict:
         return {'statusCode': 401, 'headers': cors, 'body': json.dumps({'error': 'Сессия истекла'}, ensure_ascii=False)}
 
     method = event.get('httpMethod')
-    path = event.get('path', '')
     body = json.loads(event.get('body') or '{}')
+    params = event.get('queryStringParameters') or {}
     cur = conn.cursor()
 
-    parts = path.split('/')
-    order_id = next((p for p in parts if p.isdigit()), None)
+    order_id = params.get('order_id') or body.get('order_id')
     if not order_id:
-        return {'statusCode': 400, 'headers': cors, 'body': json.dumps({'error': 'Укажите ID заказа'}, ensure_ascii=False)}
+        return {'statusCode': 400, 'headers': cors, 'body': json.dumps({'error': 'Укажите order_id'}, ensure_ascii=False)}
 
     # Проверяем доступ к заказу
     if user['role'] != 'admin':

@@ -50,12 +50,12 @@ def handler(event: dict, context) -> dict:
         return {'statusCode': 401, 'headers': cors, 'body': json.dumps({'error': 'Сессия истекла'}, ensure_ascii=False)}
 
     method = event.get('httpMethod')
-    path = event.get('path', '')
     body = json.loads(event.get('body') or '{}')
+    action = body.get('action', '')
     cur = conn.cursor()
 
-    # GET /orders — список заказов
-    if method == 'GET' and not any(x.isdigit() for x in path.split('/')):
+    # GET — список заказов
+    if method == 'GET':
         if user['role'] == 'admin':
             cur.execute("SELECT o.id, o.title, o.description, o.status, o.file_url, o.created_at, o.updated_at, u.name, u.email FROM orders o JOIN users u ON u.id = o.user_id ORDER BY o.created_at DESC")
         else:
@@ -64,8 +64,8 @@ def handler(event: dict, context) -> dict:
         orders = [{'id': r[0], 'title': r[1], 'description': r[2], 'status': r[3], 'file_url': r[4], 'created_at': str(r[5]), 'updated_at': str(r[6]), 'client_name': r[7], 'client_email': r[8]} for r in rows]
         return {'statusCode': 200, 'headers': cors, 'body': json.dumps(orders, ensure_ascii=False)}
 
-    # POST /orders — создать заказ
-    if method == 'POST' and 'status' not in path and 'file' not in path:
+    # POST create — создать заказ
+    if method == 'POST' and action == 'create':
         title = body.get('title', '').strip()
         description = body.get('description', '').strip()
         if not title:
@@ -76,12 +76,11 @@ def handler(event: dict, context) -> dict:
         order = {'id': row[0], 'title': row[1], 'description': row[2], 'status': row[3], 'created_at': str(row[4])}
         return {'statusCode': 200, 'headers': cors, 'body': json.dumps(order, ensure_ascii=False)}
 
-    # PUT /orders/{id}/status — сменить статус (только админ)
-    if method == 'PUT' and 'status' in path:
+    # PUT status — сменить статус (только админ)
+    if method == 'PUT' and action == 'status':
         if user['role'] != 'admin':
             return {'statusCode': 403, 'headers': cors, 'body': json.dumps({'error': 'Доступ запрещён'}, ensure_ascii=False)}
-        parts = path.split('/')
-        order_id = next((p for p in parts if p.isdigit()), None)
+        order_id = body.get('id')
         status = body.get('status', '')
         allowed = ['new', 'in_progress', 'review', 'done']
         if status not in allowed:
@@ -90,12 +89,11 @@ def handler(event: dict, context) -> dict:
         conn.commit()
         return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'success': True})}
 
-    # PUT /orders/{id}/file — загрузить файл (только админ)
-    if method == 'PUT' and 'file' in path:
+    # PUT file — загрузить файл (только админ)
+    if method == 'PUT' and action == 'file':
         if user['role'] != 'admin':
             return {'statusCode': 403, 'headers': cors, 'body': json.dumps({'error': 'Доступ запрещён'}, ensure_ascii=False)}
-        parts = path.split('/')
-        order_id = next((p for p in parts if p.isdigit()), None)
+        order_id = body.get('id')
         file_url = body.get('file_url', '').strip()
         if not file_url:
             return {'statusCode': 400, 'headers': cors, 'body': json.dumps({'error': 'Укажите ссылку на файл'}, ensure_ascii=False)}

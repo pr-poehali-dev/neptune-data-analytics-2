@@ -15,23 +15,23 @@ export const api = {
   auth: {
     me: () => req(AUTH_URL),
     register: (data: { email: string; password: string; name: string }) =>
-      req(`${AUTH_URL}/register`, 'POST', data),
+      req(AUTH_URL, 'POST', { ...data, action: 'register' }),
     login: (data: { email: string; password: string }) =>
-      req(`${AUTH_URL}/login`, 'POST', data),
-    logout: () => req(`${AUTH_URL}/logout`, 'POST'),
+      req(AUTH_URL, 'POST', { ...data, action: 'login' }),
+    logout: () => req(AUTH_URL, 'POST', { action: 'logout' }),
   },
   orders: {
     list: () => req(ORDERS_URL),
     create: (data: { title: string; description: string }) =>
-      req(ORDERS_URL, 'POST', data),
+      req(ORDERS_URL, 'POST', { ...data, action: 'create' }),
     setStatus: (id: number, status: string) =>
-      req(`${ORDERS_URL}/${id}/status`, 'PUT', { status }),
+      req(ORDERS_URL, 'PUT', { id, status, action: 'status' }),
     setFile: (id: number, file_url: string) =>
-      req(`${ORDERS_URL}/${id}/file`, 'PUT', { file_url }),
+      req(ORDERS_URL, 'PUT', { id, file_url, action: 'file' }),
   },
   chat: {
-    messages: (orderId: number) => req(`${CHAT_URL}/${orderId}`),
+    messages: (orderId: number) => req(`${CHAT_URL}?order_id=${orderId}`),
     send: (orderId: number, text: string) =>
-      req(`${CHAT_URL}/${orderId}`, 'POST', { text }),
+      req(CHAT_URL, 'POST', { order_id: orderId, text }),
   },
 }

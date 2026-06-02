@@ -59,7 +59,8 @@ def handler(event: dict, context) -> dict:
         return {'statusCode': 200, 'headers': cors, 'body': json.dumps(user)}
 
     # Регистрация
-    if method == 'POST' and 'register' in path:
+    action = body.get('action', '')
+    if method == 'POST' and (action == 'register' or 'register' in path):
         email = body.get('email', '').strip().lower()
         password = body.get('password', '').strip()
         name = body.get('name', '').strip()
@@ -87,7 +88,7 @@ def handler(event: dict, context) -> dict:
         }
 
     # Вход
-    if method == 'POST' and 'login' in path:
+    if method == 'POST' and (action == 'login' or 'login' in path):
         email = body.get('email', '').strip().lower()
         password = body.get('password', '').strip()
         cur = conn.cursor()
@@ -106,7 +107,7 @@ def handler(event: dict, context) -> dict:
         }
 
     # Выход
-    if method == 'POST' and 'logout' in path:
+    if method == 'POST' and (action == 'logout' or 'logout' in path):
         cookie_header = event.get('headers', {}).get('x-cookie', '')
         session_id = None
         for part in cookie_header.split(';'):

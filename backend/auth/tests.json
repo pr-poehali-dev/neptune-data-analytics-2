@@ -15,8 +15,8 @@
     {
       "name": "Register missing fields",
       "method": "POST",
-      "path": "/register",
-      "body": {"email": "", "password": "", "name": ""},
+      "path": "/",
+      "body": {"action": "register", "email": "", "password": "", "name": ""},
       "expectedStatus": 400
     }
   ]

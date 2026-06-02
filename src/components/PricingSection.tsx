@@ -24,7 +24,7 @@ const pricingTiers = [
       "Срок выполнения 3-5 дней",
       "Неограниченные правки",
     ],
-    highlighted: true,
+    highlighted: false,
   },
   {
     name: "Проект",
@@ -48,7 +48,7 @@ const pricingTiers = [
       "Быстрая загрузка на всех устройствах",
       "Поддержка и сопровождение",
     ],
-    highlighted: false,
+    highlighted: true,
   },
 ]
 

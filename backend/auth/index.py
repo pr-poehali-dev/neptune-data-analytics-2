@@ -46,6 +46,18 @@ def handler(event: dict, context) -> dict:
     action = body.get('action', '')
     conn = get_db()
 
+    # GET — список пользователей (только admin)
+    if method == 'GET' and (event.get('queryStringParameters') or {}).get('action') == 'users':
+        session_id = get_session_id(event)
+        user = get_user_by_session(conn, session_id) if session_id else None
+        if not user or user['role'] != 'admin':
+            return {'statusCode': 403, 'headers': cors, 'body': json.dumps({'error': 'Нет доступа'})}
+        cur = conn.cursor()
+        cur.execute("SELECT id, email, name, role, created_at FROM users ORDER BY created_at DESC")
+        rows = cur.fetchall()
+        users = [{'id': r[0], 'email': r[1], 'name': r[2], 'role': r[3], 'created_at': str(r[4])} for r in rows]
+        return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'users': users})}
+
     # GET — получить текущего пользователя по токену
     if method == 'GET':
         session_id = get_session_id(event)
@@ -103,18 +115,6 @@ def handler(event: dict, context) -> dict:
             cur.execute("UPDATE sessions SET expires_at = NOW() WHERE id = %s", (session_id,))
             conn.commit()
         return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'success': True})}
-
-    # Список пользователей (только admin)
-    if method == 'GET' and event.get('queryStringParameters', {}).get('action') == 'users':
-        session_id = get_session_id(event)
-        user = get_user_by_session(conn, session_id) if session_id else None
-        if not user or user['role'] != 'admin':
-            return {'statusCode': 403, 'headers': cors, 'body': json.dumps({'error': 'Нет доступа'})}
-        cur = conn.cursor()
-        cur.execute("SELECT id, email, name, role, created_at FROM users ORDER BY created_at DESC")
-        rows = cur.fetchall()
-        users = [{'id': r[0], 'email': r[1], 'name': r[2], 'role': r[3], 'created_at': str(r[4])} for r in rows]
-        return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'users': users})}
 
     # Смена роли пользователя (только admin)
     if method == 'POST' and action == 'set_role':

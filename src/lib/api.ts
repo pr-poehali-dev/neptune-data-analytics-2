@@ -20,7 +20,7 @@ function req(url: string, method = 'GET', body?: object) {
     method,
     headers: {
       'Content-Type': 'application/json',
-      ...(sessionId ? { 'X-Session-Id': sessionId } : {}),
+      ...(sessionId ? { 'X-Session-Id': sessionId, 'Authorization': sessionId } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
   }).then(r => r.json())

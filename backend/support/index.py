@@ -33,7 +33,12 @@ def handler(event: dict, context) -> dict:
         return {'statusCode': 200, 'headers': CORS_HEADERS, 'body': ''}
 
     method = event.get('httpMethod', 'GET')
-    session_id = event.get('headers', {}).get('x-session-id', '') or ''
+    headers = event.get('headers', {})
+    session_id = (
+        headers.get('x-session-id') or
+        headers.get('x-authorization') or
+        ''
+    )
     conn = get_db()
     user = get_user_by_session(conn, session_id) if session_id else None
 

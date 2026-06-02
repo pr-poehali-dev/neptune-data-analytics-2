@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@/contexts/AuthContext'
 import { api } from '@/lib/api'
 import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'

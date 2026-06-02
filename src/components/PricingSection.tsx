@@ -5,12 +5,12 @@ import { QuoteFormDialog } from "@/components/QuoteFormDialog"
 const pricingTiers = [
   {
     name: "Стандарт",
-    price: "2 900",
+    price: "1 500",
     features: [
-      "Презентация до 15 слайдов",
+      "Презентация до 10 слайдов",
       "Профессиональный дизайн",
       "2 варианта цветовой схемы",
-      "Срок выполнения 2-3 дня",
+      "Срок выполнения от 2 часов до 1 дня",
       "2 раунда правок",
     ],
     highlighted: false,

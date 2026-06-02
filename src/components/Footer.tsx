@@ -4,9 +4,9 @@ export function Footer() {
       <div className="container mx-auto max-w-6xl">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <h3 className="text-xl font-bold mb-4">ProSlide</h3>
+            <h3 className="text-xl font-bold mb-4">ProSlide Premium</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              2026 ProSlide. Все права защищены.<br />Проекты и презентации любой сложности.
+              2026 ProSlide Premium. Все права защищены.<br />Проекты и презентации любой сложности.
             </p>
           </div>
 

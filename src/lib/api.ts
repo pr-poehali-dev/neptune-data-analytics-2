@@ -20,7 +20,7 @@ function req(url: string, method = 'GET', body?: object) {
     method,
     headers: {
       'Content-Type': 'application/json',
-      ...(sessionId ? { 'X-Session-Id': sessionId, 'Authorization': sessionId } : {}),
+      ...(sessionId ? { 'X-Session-Id': sessionId } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
   }).then(r => r.json())
@@ -56,12 +56,20 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...data, action: 'create' }),
       }).then(r => r.json()),
-    list: (status?: string) => req(status ? `${SUPPORT_URL}?status=${status}` : SUPPORT_URL),
-    get: (ticketId: number) => req(`${SUPPORT_URL}?ticket_id=${ticketId}`),
+    list: (status?: string) => {
+      const sid = getSessionId()
+      const params = new URLSearchParams({ ...(status ? { status } : {}), ...(sid ? { session_id: sid } : {}) })
+      return req(`${SUPPORT_URL}?${params}`)
+    },
+    get: (ticketId: number) => {
+      const sid = getSessionId()
+      const params = new URLSearchParams({ ticket_id: String(ticketId), ...(sid ? { session_id: sid } : {}) })
+      return req(`${SUPPORT_URL}?${params}`)
+    },
     reply: (ticketId: number, text: string) =>
-      req(SUPPORT_URL, 'POST', { action: 'reply', ticket_id: ticketId, text }),
+      req(SUPPORT_URL, 'POST', { action: 'reply', ticket_id: ticketId, text, session_id: getSessionId() }),
     setStatus: (ticketId: number, status: string) =>
-      req(SUPPORT_URL, 'PUT', { ticket_id: ticketId, status }),
+      req(SUPPORT_URL, 'PUT', { ticket_id: ticketId, status, session_id: getSessionId() }),
   },
   analytics: {
     track: (path: string) => {

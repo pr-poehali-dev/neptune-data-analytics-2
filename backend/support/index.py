@@ -34,9 +34,11 @@ def handler(event: dict, context) -> dict:
 
     method = event.get('httpMethod', 'GET')
     headers = event.get('headers', {})
+    params = event.get('queryStringParameters') or {}
     session_id = (
         headers.get('x-session-id') or
         headers.get('x-authorization') or
+        params.get('session_id') or
         ''
     )
     conn = get_db()
@@ -47,6 +49,9 @@ def handler(event: dict, context) -> dict:
         if method == 'POST':
             body = json.loads(event.get('body') or '{}')
             action = body.get('action', 'create')
+            if not session_id and body.get('session_id'):
+                session_id = body.get('session_id')
+                user = get_user_by_session(conn, session_id)
 
             if action == 'create':
                 name = (body.get('name') or '').strip()
@@ -94,10 +99,12 @@ def handler(event: dict, context) -> dict:
 
         # PUT / — изменить статус тикета (только админ)
         if method == 'PUT':
+            body = json.loads(event.get('body') or '{}')
+            if not session_id and body.get('session_id'):
+                user = get_user_by_session(conn, body.get('session_id'))
             if not user or user['role'] != 'admin':
                 return {'statusCode': 403, 'headers': CORS_HEADERS,
                         'body': json.dumps({'error': 'Нет доступа'})}
-            body = json.loads(event.get('body') or '{}')
             ticket_id = body.get('ticket_id')
             status = body.get('status')
             allowed = ['open', 'answered', 'closed']

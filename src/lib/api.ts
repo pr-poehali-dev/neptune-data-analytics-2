@@ -34,6 +34,9 @@ export const api = {
     login: (data: { email: string; password: string }) =>
       req(AUTH_URL, 'POST', { ...data, action: 'login' }),
     logout: () => req(AUTH_URL, 'POST', { action: 'logout' }),
+    users: () => req(`${AUTH_URL}?action=users`),
+    setRole: (userId: number, role: string) =>
+      req(AUTH_URL, 'POST', { action: 'set_role', user_id: userId, role }),
   },
   orders: {
     list: () => req(ORDERS_URL),

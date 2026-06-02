@@ -32,10 +32,18 @@ const TICKET_STATUS: Record<string, { label: string; variant: 'default' | 'secon
   closed: { label: 'Закрыт', variant: 'outline' },
 }
 
+type AppUser = { id: number; email: string; name: string; role: string; created_at: string }
+
+const ROLE_LABELS: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
+  admin: { label: 'Админ', variant: 'default' },
+  support: { label: 'Поддержка', variant: 'secondary' },
+  client: { label: 'Клиент', variant: 'outline' },
+}
+
 export default function AdminPage() {
   const { user, loading, logout } = useAuth()
   const navigate = useNavigate()
-  const [tab, setTab] = useState<'orders' | 'support'>('orders')
+  const [tab, setTab] = useState<'orders' | 'support' | 'users'>('orders')
   const [orders, setOrders] = useState<Order[]>([])
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -49,6 +57,9 @@ export default function AdminPage() {
   const [ticketReplies, setTicketReplies] = useState<Reply[]>([])
   const [replyText, setReplyText] = useState('')
   const ticketChatRef = useRef<HTMLDivElement>(null)
+  // users
+  const [users, setUsers] = useState<AppUser[]>([])
+  const [roleChanging, setRoleChanging] = useState<number | null>(null)
 
   useEffect(() => {
     if (!loading && !user) navigate('/auth')
@@ -61,7 +72,15 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (user && tab === 'support') api.support.list().then(data => setTickets(data.tickets || []))
+    if (user && tab === 'users') api.auth.users().then(data => setUsers(data.users || []))
   }, [user, tab])
+
+  const handleRoleChange = async (userId: number, role: string) => {
+    setRoleChanging(userId)
+    await api.auth.setRole(userId, role)
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, role } : u))
+    setRoleChanging(null)
+  }
 
   useEffect(() => {
     if (selectedTicket) {
@@ -177,6 +196,13 @@ export default function AdminPage() {
               </span>
             )}
           </button>
+          <button
+            onClick={() => setTab('users')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === 'users' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+          >
+            <Icon name="Users" size={14} className="inline mr-1.5" />
+            Пользователи
+          </button>
         </div>
 
         {tab === 'support' && (
@@ -264,6 +290,50 @@ export default function AdminPage() {
                 </Card>
               )}
             </div>
+          </div>
+        )}
+
+        {tab === 'users' && (
+          <div className="space-y-3 max-w-2xl">
+            {users.length === 0 && (
+              <Card className="border-dashed">
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  <Icon name="Users" className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                  <p>Пользователей нет</p>
+                </CardContent>
+              </Card>
+            )}
+            {users.map(u => {
+              const r = ROLE_LABELS[u.role] || { label: u.role, variant: 'outline' as const }
+              return (
+                <Card key={u.id}>
+                  <CardContent className="p-4 flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{u.name}</p>
+                      <p className="text-xs text-muted-foreground">{u.email}</p>
+                    </div>
+                    <Badge variant={r.variant}>{r.label}</Badge>
+                    {u.id !== user?.id && (
+                      <Select
+                        value={u.role}
+                        onValueChange={v => handleRoleChange(u.id, v)}
+                        disabled={roleChanging === u.id}
+                      >
+                        <SelectTrigger className="h-8 w-36 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="client">Клиент</SelectItem>
+                          <SelectItem value="support">Поддержка</SelectItem>
+                          <SelectItem value="admin">Админ</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                    {u.id === user?.id && <span className="text-xs text-muted-foreground">Вы</span>}
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         )}
 

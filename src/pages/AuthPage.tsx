@@ -21,12 +21,14 @@ export default function AuthPage() {
     setError('')
     setLoading(true)
     try {
+      const redirect = (role: string) =>
+        role === 'admin' ? '/admin' : role === 'support' ? '/support-panel' : '/dashboard'
       if (mode === 'login') {
         const user = await login(email, password)
-        navigate(user.role === 'admin' ? '/admin' : '/dashboard')
+        navigate(redirect(user.role))
       } else {
         const user = await register(email, password, name)
-        navigate(user.role === 'admin' ? '/admin' : '/dashboard')
+        navigate(redirect(user.role))
       }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Ошибка')

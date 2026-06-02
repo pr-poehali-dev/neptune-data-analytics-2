@@ -72,7 +72,7 @@ def handler(event: dict, context) -> dict:
                         'body': json.dumps({'success': True, 'ticket_id': ticket_id})}
 
             if action == 'reply':
-                if not user or user['role'] != 'admin':
+                if not user or user['role'] not in ('admin', 'support'):
                     return {'statusCode': 403, 'headers': CORS_HEADERS,
                             'body': json.dumps({'error': 'Нет доступа'})}
                 ticket_id = body.get('ticket_id')
@@ -102,7 +102,7 @@ def handler(event: dict, context) -> dict:
             body = json.loads(event.get('body') or '{}')
             if not session_id and body.get('session_id'):
                 user = get_user_by_session(conn, body.get('session_id'))
-            if not user or user['role'] != 'admin':
+            if not user or user['role'] not in ('admin', 'support'):
                 return {'statusCode': 403, 'headers': CORS_HEADERS,
                         'body': json.dumps({'error': 'Нет доступа'})}
             ticket_id = body.get('ticket_id')
@@ -149,8 +149,8 @@ def handler(event: dict, context) -> dict:
                 return {'statusCode': 200, 'headers': CORS_HEADERS,
                         'body': json.dumps({'ticket': ticket, 'replies': replies})}
 
-            # Список всех тикетов — только для админа
-            if not user or user['role'] != 'admin':
+            # Список всех тикетов — для админа и support
+            if not user or user['role'] not in ('admin', 'support'):
                 return {'statusCode': 403, 'headers': CORS_HEADERS,
                         'body': json.dumps({'error': 'Нет доступа'})}
             status_filter = params.get('status', '')

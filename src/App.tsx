@@ -15,6 +15,7 @@ import DashboardPage from "./pages/DashboardPage";
 import AdminPage from "./pages/AdminPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import SupportPage from "./pages/SupportPage";
+import SupportStaffPage from "./pages/SupportStaffPage";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,7 @@ function AppRoutes() {
       <Route path="/admin" element={<AdminPage />} />
       <Route path="/admin/analytics" element={<AnalyticsPage />} />
       <Route path="/support" element={<SupportPage />} />
+      <Route path="/support-panel" element={<SupportStaffPage />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>

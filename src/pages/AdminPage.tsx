@@ -72,8 +72,15 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (user && tab === 'support') api.support.list().then(data => setTickets(data.tickets || []))
-    if (user && tab === 'users') api.auth.users().then(data => setUsers(data.users || []))
   }, [user, tab])
+
+  useEffect(() => {
+    if (user && tab === 'users') {
+      api.auth.users().then(data => {
+        setUsers(Array.isArray(data.users) ? data.users : [])
+      })
+    }
+  }, [tab, user])
 
   const handleRoleChange = async (userId: number, role: string) => {
     setRoleChanging(userId)

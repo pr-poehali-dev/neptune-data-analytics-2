@@ -51,7 +51,7 @@ def handler(event: dict, context) -> dict:
 
     # GET — список заказов
     if method == 'GET':
-        if user['role'] == 'admin':
+        if user['role'] in ('admin', 'support'):
             cur.execute("SELECT o.id, o.title, o.description, o.status, o.file_url, o.created_at, o.updated_at, u.name, u.email FROM orders o JOIN users u ON u.id = o.user_id ORDER BY o.created_at DESC")
         else:
             cur.execute("SELECT o.id, o.title, o.description, o.status, o.file_url, o.created_at, o.updated_at, u.name, u.email FROM orders o JOIN users u ON u.id = o.user_id WHERE o.user_id = %s ORDER BY o.created_at DESC", (user['id'],))
@@ -71,9 +71,9 @@ def handler(event: dict, context) -> dict:
         order = {'id': row[0], 'title': row[1], 'description': row[2], 'status': row[3], 'created_at': str(row[4])}
         return {'statusCode': 200, 'headers': cors, 'body': json.dumps(order, ensure_ascii=False)}
 
-    # PUT status — сменить статус (только админ)
+    # PUT status — сменить статус (админ и support)
     if method == 'PUT' and action == 'status':
-        if user['role'] != 'admin':
+        if user['role'] not in ('admin', 'support'):
             return {'statusCode': 403, 'headers': cors, 'body': json.dumps({'error': 'Доступ запрещён'}, ensure_ascii=False)}
         order_id = body.get('id')
         status = body.get('status', '')
@@ -84,9 +84,9 @@ def handler(event: dict, context) -> dict:
         conn.commit()
         return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'success': True})}
 
-    # PUT file — загрузить файл (только админ)
+    # PUT file — загрузить файл (админ и support)
     if method == 'PUT' and action == 'file':
-        if user['role'] != 'admin':
+        if user['role'] not in ('admin', 'support'):
             return {'statusCode': 403, 'headers': cors, 'body': json.dumps({'error': 'Доступ запрещён'}, ensure_ascii=False)}
         order_id = body.get('id')
         file_url = body.get('file_url', '').strip()

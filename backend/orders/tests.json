@@ -11,6 +11,12 @@
       "method": "GET",
       "path": "/",
       "expectedStatus": 401
+    },
+    {
+      "name": "Get public stats",
+      "method": "GET",
+      "path": "/?action=stats",
+      "expectedStatus": 200
     }
   ]
 }

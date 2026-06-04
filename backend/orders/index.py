@@ -36,6 +36,20 @@ def handler(event: dict, context) -> dict:
         return {'statusCode': 200, 'headers': {**cors, 'Access-Control-Max-Age': '86400'}, 'body': ''}
 
     conn = get_db()
+
+    # GET ?action=stats — публичный счётчик заказов (без авторизации)
+    qs = event.get('queryStringParameters') or {}
+    if isinstance(qs, str):
+        import urllib.parse
+        qs = dict(urllib.parse.parse_qsl(qs))
+    if event.get('httpMethod') == 'GET' and qs.get('action') == 'stats':
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM orders WHERE status IN ('new', 'in_progress', 'review')")
+        in_progress = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM orders WHERE status = 'done'")
+        done = cur.fetchone()[0]
+        return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'in_progress': in_progress, 'done': done})}
+
     session_id = get_session_id(event)
     if not session_id:
         return {'statusCode': 401, 'headers': cors, 'body': json.dumps({'error': 'Не авторизован'}, ensure_ascii=False)}

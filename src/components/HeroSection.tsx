@@ -1,9 +1,17 @@
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Sparkles, Code2, Palette } from "lucide-react"
 import { useEffect, useState } from "react"
+import { api } from "@/lib/api"
 
 export function HeroSection() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const [stats, setStats] = useState<{ in_progress: number; done: number } | null>(null)
+
+  useEffect(() => {
+    api.orders.stats().then(data => {
+      if (data && typeof data.in_progress === 'number') setStats(data)
+    }).catch(() => {})
+  }, [])
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -139,6 +147,15 @@ export function HeroSection() {
             <div className="w-2 h-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: "1s" }} />
             <span>Срок от 2 часов</span>
           </div>
+          {stats !== null && stats.in_progress > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+              </span>
+              <span className="text-primary font-medium">Сейчас в работе: {stats.in_progress} {stats.in_progress === 1 ? 'заказ' : stats.in_progress < 5 ? 'заказа' : 'заказов'}</span>
+            </div>
+          )}
         </div>
       </div>
     </section>

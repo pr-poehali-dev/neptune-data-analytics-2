@@ -39,6 +39,7 @@ export const api = {
       req(AUTH_URL, 'POST', { action: 'set_role', user_id: userId, role }),
   },
   orders: {
+    stats: () => fetch(`${ORDERS_URL}?action=stats`).then(r => r.json()),
     list: () => req(ORDERS_URL),
     create: (data: { title: string; description: string }) =>
       req(ORDERS_URL, 'POST', { ...data, action: 'create' }),

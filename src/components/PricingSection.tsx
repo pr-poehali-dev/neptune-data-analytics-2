@@ -4,14 +4,26 @@ import { QuoteFormDialog } from "@/components/QuoteFormDialog"
 
 const pricingTiers = [
   {
-    name: "Стандарт",
-    price: "1 500",
+    name: "Презентация",
+    price: "600",
     features: [
       "Презентация до 10 слайдов",
       "Профессиональный дизайн",
       "2 варианта цветовой схемы",
       "Срок выполнения от 2 часов до 1 дня",
       "2 раунда правок",
+    ],
+    highlighted: false,
+  },
+  {
+    name: "Стандарт",
+    price: "1 300",
+    features: [
+      "Презентация до 20 слайдов",
+      "Профессиональный дизайн",
+      "Фирменный стиль",
+      "Срок выполнения 1-2 дня",
+      "3 раунда правок",
     ],
     highlighted: false,
   },
@@ -77,7 +89,7 @@ export function PricingSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           {pricingTiers.map((tier, index) => (
             <Card
               key={index}

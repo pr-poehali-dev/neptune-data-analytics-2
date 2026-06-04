@@ -165,6 +165,12 @@ export default function AdminPage() {
                 Аналитика
               </Link>
             </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/support-panel">
+                <Icon name="Headphones" className="mr-1 h-3 w-3" />
+                Поддержка
+              </Link>
+            </Button>
             <Button variant="outline" size="sm" onClick={handleLogout}>Выйти</Button>
           </div>
         </div>

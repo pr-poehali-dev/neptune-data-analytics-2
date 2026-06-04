@@ -118,8 +118,8 @@ export function QuoteFormDialog({ packageName, variant = "default", className, c
                 <SelectValue placeholder="Выберите тариф" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Базовый">Базовый</SelectItem>
-                <SelectItem value="Про">Про</SelectItem>
+                <SelectItem value="Стандарт">Стандарт</SelectItem>
+                <SelectItem value="Бизнес">Бизнес</SelectItem>
                 <SelectItem value="Индивидуальный">Индивидуальный</SelectItem>
                 <SelectItem value="Еще не определился">Еще не определился</SelectItem>
               </SelectContent>

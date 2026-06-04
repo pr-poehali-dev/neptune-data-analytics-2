@@ -88,9 +88,9 @@ export function HeroSection() {
         </div>
 
         <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6 animate-fade-in-up text-balance">
-          Презентации, которые{" "}
+          Проекты, которые{" "}
           <span className="text-primary relative inline-block">
-            продают
+            покупают
             <svg
               className="absolute -bottom-2 left-0 w-full"
               height="12"

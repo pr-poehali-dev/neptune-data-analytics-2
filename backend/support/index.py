@@ -1,6 +1,29 @@
 import json
 import os
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import psycopg2
+
+SMTP_HOST = 'smtp.yandex.ru'
+SMTP_PORT = 465
+SMTP_USER = 'egorkrivolap@yandex.ru'
+ADMIN_EMAIL = 'egorkrivolap@yandex.ru'
+SITE_URL = 'https://proeksty.poehali.app'
+
+
+def send_email(to: str, subject: str, html: str):
+    password = os.environ.get('SMTP_PASSWORD', '')
+    if not password:
+        return
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = subject
+    msg['From'] = SMTP_USER
+    msg['To'] = to
+    msg.attach(MIMEText(html, 'html', 'utf-8'))
+    with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT) as server:
+        server.login(SMTP_USER, password)
+        server.sendmail(SMTP_USER, to, msg.as_string())
 
 
 def get_db():
@@ -68,6 +91,18 @@ def handler(event: dict, context) -> dict:
                 )
                 ticket_id = cur.fetchone()[0]
                 conn.commit()
+                # Уведомление админу о новом обращении
+                try:
+                    html = f"""<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+                      <h2 style="color:#FF0035">🎫 Новое обращение в поддержку #{ticket_id}</h2>
+                      <p><b>От:</b> {name} ({email})</p>
+                      <p><b>Тема:</b> {subject}</p>
+                      <blockquote style="border-left:3px solid #FF0035;padding:8px 16px;margin:16px 0;color:#555">{message}</blockquote>
+                      <p style="margin-top:24px"><a href="{SITE_URL}/support-panel" style="background:#FF0035;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">Открыть панель поддержки</a></p>
+                    </div>"""
+                    send_email(ADMIN_EMAIL, f'Новое обращение #{ticket_id}: {subject}', html)
+                except Exception:
+                    pass
                 return {'statusCode': 200, 'headers': CORS_HEADERS,
                         'body': json.dumps({'success': True, 'ticket_id': ticket_id})}
 

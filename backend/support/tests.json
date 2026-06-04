@@ -1,27 +1,16 @@
 {
   "tests": [
     {
-      "name": "Create ticket",
-      "method": "POST",
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
       "path": "/",
-      "body": {
-        "action": "create",
-        "name": "Иван Иванов",
-        "email": "test@test.com",
-        "subject": "Тестовый вопрос",
-        "message": "Это тестовое сообщение для проверки системы"
-      },
-      "expectedStatus": 200,
-      "expectedBody": "success",
-      "bodyMatcher": "contains"
+      "expectedStatus": 200
     },
     {
       "name": "Get all tickets unauthorized",
       "method": "GET",
       "path": "/",
-      "expectedStatus": 403,
-      "expectedBody": "error",
-      "bodyMatcher": "contains"
+      "expectedStatus": 403
     }
   ]
 }

@@ -1,6 +1,16 @@
 import json
 import os
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import psycopg2
+
+SMTP_HOST = 'smtp.yandex.ru'
+SMTP_PORT = 465
+SMTP_USER = 'egorkrivolap@yandex.ru'
+ADMIN_EMAIL = 'egorkrivolap@yandex.ru'
+SITE_URL = 'https://proeksty.poehali.app'
+STATUS_LABELS = {'new': 'Новый', 'in_progress': 'В работе', 'review': 'На проверке', 'done': 'Готово'}
 
 
 def get_db():
@@ -21,6 +31,20 @@ def get_user_by_session(conn, session_id: str):
 
 def get_session_id(event):
     return event.get('headers', {}).get('x-session-id', '') or ''
+
+
+def send_email(to: str, subject: str, html: str):
+    password = os.environ.get('SMTP_PASSWORD', '')
+    if not password:
+        return
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = subject
+    msg['From'] = SMTP_USER
+    msg['To'] = to
+    msg.attach(MIMEText(html, 'html', 'utf-8'))
+    with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT) as server:
+        server.login(SMTP_USER, password)
+        server.sendmail(SMTP_USER, to, msg.as_string())
 
 
 def handler(event: dict, context) -> dict:
@@ -83,6 +107,17 @@ def handler(event: dict, context) -> dict:
         row = cur.fetchone()
         conn.commit()
         order = {'id': row[0], 'title': row[1], 'description': row[2], 'status': row[3], 'created_at': str(row[4])}
+        # Уведомление админу о новом заказе
+        try:
+            html = f"""<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+              <h2 style="color:#FF0035">📦 Новый заказ #{order['id']}</h2>
+              <p><b>Клиент:</b> {user['name']} ({user['email']})</p>
+              <p><b>Название:</b> {title}</p>
+              <p style="margin-top:24px"><a href="{SITE_URL}/admin" style="background:#FF0035;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">Открыть в админке</a></p>
+            </div>"""
+            send_email(ADMIN_EMAIL, f"Новый заказ #{order['id']}: {title}", html)
+        except Exception:
+            pass
         return {'statusCode': 200, 'headers': cors, 'body': json.dumps(order, ensure_ascii=False)}
 
     # PUT status — сменить статус (админ и support)
@@ -94,8 +129,24 @@ def handler(event: dict, context) -> dict:
         allowed = ['new', 'in_progress', 'review', 'done']
         if status not in allowed:
             return {'statusCode': 400, 'headers': cors, 'body': json.dumps({'error': 'Недопустимый статус'}, ensure_ascii=False)}
+        # Получаем данные заказа для уведомления
+        cur.execute("SELECT o.title, u.name, u.email FROM orders o JOIN users u ON u.id = o.user_id WHERE o.id = %s", (order_id,))
+        order_row = cur.fetchone()
         cur.execute("UPDATE orders SET status = %s, updated_at = NOW() WHERE id = %s", (status, order_id))
         conn.commit()
+        # Уведомление клиенту о смене статуса
+        if order_row:
+            try:
+                label = STATUS_LABELS.get(status, status)
+                html = f"""<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+                  <h2 style="color:#FF0035">🔄 Статус заказа обновлён</h2>
+                  <p>Здравствуйте, <b>{order_row[1]}</b>!</p>
+                  <p>Статус вашего заказа <b>«{order_row[0]}»</b> изменён на: <b>{label}</b></p>
+                  <p style="margin-top:24px"><a href="{SITE_URL}/dashboard" style="background:#FF0035;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">Открыть личный кабинет</a></p>
+                </div>"""
+                send_email(order_row[2], f"Заказ #{order_id}: статус изменён на «{label}»", html)
+            except Exception:
+                pass
         return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'success': True})}
 
     # PUT file — загрузить файл (админ и support)

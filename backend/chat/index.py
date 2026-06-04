@@ -1,6 +1,15 @@
 import json
 import os
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import psycopg2
+
+SMTP_HOST = 'smtp.yandex.ru'
+SMTP_PORT = 465
+SMTP_USER = 'egorkrivolap@yandex.ru'
+ADMIN_EMAIL = 'egorkrivolap@yandex.ru'
+SITE_URL = 'https://proeksty.poehali.app'
 
 
 def get_db():
@@ -21,6 +30,20 @@ def get_user_by_session(conn, session_id: str):
 
 def get_session_id(event):
     return event.get('headers', {}).get('x-session-id', '') or ''
+
+
+def send_email(to: str, subject: str, html: str):
+    password = os.environ.get('SMTP_PASSWORD', '')
+    if not password:
+        return
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = subject
+    msg['From'] = SMTP_USER
+    msg['To'] = to
+    msg.attach(MIMEText(html, 'html', 'utf-8'))
+    with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT) as server:
+        server.login(SMTP_USER, password)
+        server.sendmail(SMTP_USER, to, msg.as_string())
 
 
 def handler(event: dict, context) -> dict:
@@ -54,7 +77,7 @@ def handler(event: dict, context) -> dict:
         return {'statusCode': 400, 'headers': cors, 'body': json.dumps({'error': 'Укажите order_id'}, ensure_ascii=False)}
 
     # Проверяем доступ к заказу
-    if user['role'] != 'admin':
+    if user['role'] not in ('admin', 'support'):
         cur.execute("SELECT id FROM orders WHERE id = %s AND user_id = %s", (order_id, user['id']))
         if not cur.fetchone():
             return {'statusCode': 403, 'headers': cors, 'body': json.dumps({'error': 'Доступ запрещён'}, ensure_ascii=False)}
@@ -81,6 +104,28 @@ def handler(event: dict, context) -> dict:
         row = cur.fetchone()
         conn.commit()
         msg = {'id': row[0], 'text': row[1], 'created_at': str(row[2]), 'sender_name': user['name'], 'sender_role': user['role']}
+
+        # Уведомление получателю (если пишет клиент — уведомить админа, если админ/support — уведомить клиента)
+        try:
+            cur.execute("SELECT o.title, u.name, u.email FROM orders o JOIN users u ON u.id = o.user_id WHERE o.id = %s", (order_id,))
+            order_row = cur.fetchone()
+            if order_row:
+                order_title, client_name, client_email = order_row
+                if user['role'] in ('admin', 'support'):
+                    to_email, to_name = client_email, client_name
+                else:
+                    to_email, to_name = ADMIN_EMAIL, 'Администратор'
+                html = f"""<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+                  <h2 style="color:#FF0035">💬 Новое сообщение по заказу</h2>
+                  <p>Здравствуйте, <b>{to_name}</b>!</p>
+                  <p><b>{user['name']}</b> написал по заказу <b>«{order_title}»</b>:</p>
+                  <blockquote style="border-left:3px solid #FF0035;padding:8px 16px;margin:16px 0;color:#555">{text}</blockquote>
+                  <p style="margin-top:24px"><a href="{SITE_URL}/dashboard" style="background:#FF0035;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">Ответить в кабинете</a></p>
+                </div>"""
+                send_email(to_email, f'Новое сообщение по заказу #{order_id}', html)
+        except Exception:
+            pass
+
         return {'statusCode': 200, 'headers': cors, 'body': json.dumps(msg, ensure_ascii=False)}
 
     return {'statusCode': 404, 'headers': cors, 'body': json.dumps({'error': 'Not found'})}

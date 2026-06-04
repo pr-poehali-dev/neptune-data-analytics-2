@@ -172,7 +172,7 @@ export function ContactSection() {
                     <Phone className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-1">Телефон / WhatsApp</h3>
+                    <h3 className="font-semibold mb-1">Телефон / Макс</h3>
                     <a href="tel:+79183538317" className="text-sm text-muted-foreground hover:text-primary transition-colors">+7 918 353-83-17</a>
                   </div>
                 </div>

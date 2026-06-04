@@ -47,7 +47,11 @@ def handler(event: dict, context) -> dict:
     conn = get_db()
 
     # GET — список пользователей (только admin)
-    if method == 'GET' and (event.get('queryStringParameters') or {}).get('action') == 'users':
+    qs = event.get('queryStringParameters') or {}
+    if isinstance(qs, str):
+        import urllib.parse
+        qs = dict(urllib.parse.parse_qsl(qs))
+    if method == 'GET' and qs.get('action') == 'users':
         session_id = get_session_id(event)
         user = get_user_by_session(conn, session_id) if session_id else None
         if not user or user['role'] != 'admin':

@@ -11,6 +11,7 @@ export function MobileMenu() {
     { href: "#services", label: "Услуги" },
     { href: "#portfolio", label: "Портфолио" },
     { href: "#pricing", label: "Тарифы" },
+    { href: "#calculator", label: "Калькулятор" },
     { href: "#contact", label: "Контакты" },
   ]
 

@@ -40,6 +40,9 @@ export function Navbar() {
             <a href="#pricing" className="text-sm font-medium hover:text-primary transition-colors">
               Тарифы
             </a>
+            <a href="#calculator" className="text-sm font-medium hover:text-primary transition-colors">
+              Калькулятор
+            </a>
             <a href="#contact" className="text-sm font-medium hover:text-primary transition-colors">
               Контакты
             </a>

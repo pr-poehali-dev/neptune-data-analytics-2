@@ -32,6 +32,8 @@ export default function DashboardPage() {
   const [msgText, setMsgText] = useState('')
   const [newTitle, setNewTitle] = useState('')
   const [newDesc, setNewDesc] = useState('')
+  const [newPromo, setNewPromo] = useState('')
+  const [promoStatus, setPromoStatus] = useState<{ discount: number | null; error: string | null; checking: boolean }>({ discount: null, error: null, checking: false })
   const [showNewForm, setShowNewForm] = useState(false)
   const [tab, setTab] = useState<'orders' | 'chat'>('orders')
   const chatRef = useRef<HTMLDivElement>(null)
@@ -57,12 +59,23 @@ export default function DashboardPage() {
 
   const handleLogout = async () => { await logout(); navigate('/') }
 
+  const handleCheckPromo = async () => {
+    if (!newPromo.trim()) return
+    setPromoStatus({ discount: null, error: null, checking: true })
+    const res = await api.orders.checkPromo(newPromo.trim())
+    if (res.discount_percent) {
+      setPromoStatus({ discount: res.discount_percent, error: null, checking: false })
+    } else {
+      setPromoStatus({ discount: null, error: res.error || 'Промокод не найден', checking: false })
+    }
+  }
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
-    const order = await api.orders.create({ title: newTitle, description: newDesc })
+    const order = await api.orders.create({ title: newTitle, description: newDesc, promo_code: newPromo.trim() || undefined })
     if (!order.error) {
       setOrders(prev => [order, ...prev])
-      setNewTitle(''); setNewDesc(''); setShowNewForm(false)
+      setNewTitle(''); setNewDesc(''); setNewPromo(''); setPromoStatus({ discount: null, error: null, checking: false }); setShowNewForm(false)
     }
   }
 
@@ -107,8 +120,27 @@ export default function DashboardPage() {
                 <Input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Название заказа" required />
                 <Textarea value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Описание: тип презентации, количество слайдов, пожелания..." rows={3} />
                 <div className="flex gap-2">
-                  <Button type="submit">Создать</Button>
-                  <Button type="button" variant="outline" onClick={() => setShowNewForm(false)}>Отмена</Button>
+                  <Input
+                    value={newPromo}
+                    onChange={e => { setNewPromo(e.target.value.toUpperCase()); setPromoStatus({ discount: null, error: null, checking: false }) }}
+                    placeholder="Промокод (необязательно)"
+                    className="flex-1"
+                  />
+                  <Button type="button" variant="outline" onClick={handleCheckPromo} disabled={!newPromo.trim() || promoStatus.checking}>
+                    {promoStatus.checking ? 'Проверка...' : 'Применить'}
+                  </Button>
+                </div>
+                {promoStatus.discount !== null && (
+                  <p className="text-sm text-green-600 font-medium flex items-center gap-1">
+                    <Icon name="Tag" size={14} /> Скидка {promoStatus.discount}% применена!
+                  </p>
+                )}
+                {promoStatus.error && (
+                  <p className="text-sm text-destructive">{promoStatus.error}</p>
+                )}
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={!!newPromo.trim() && promoStatus.discount === null}>Создать</Button>
+                  <Button type="button" variant="outline" onClick={() => { setShowNewForm(false); setNewPromo(''); setPromoStatus({ discount: null, error: null, checking: false }) }}>Отмена</Button>
                 </div>
               </form>
             </CardContent>

@@ -43,7 +43,7 @@ const ROLE_LABELS: Record<string, { label: string; variant: 'default' | 'seconda
 export default function AdminPage() {
   const { user, loading, logout } = useAuth()
   const navigate = useNavigate()
-  const [tab, setTab] = useState<'orders' | 'support' | 'users'>('orders')
+  const [tab, setTab] = useState<'orders' | 'support' | 'users' | 'promos'>('orders')
   const [orders, setOrders] = useState<Order[]>([])
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -60,6 +60,11 @@ export default function AdminPage() {
   // users
   const [users, setUsers] = useState<AppUser[]>([])
   const [roleChanging, setRoleChanging] = useState<number | null>(null)
+  // promos
+  type Promo = { id: number; code: string; discount_percent: number; max_uses: number | null; used_count: number; is_active: boolean; expires_at: string | null; created_at: string }
+  const [promos, setPromos] = useState<Promo[]>([])
+  const [promoForm, setPromoForm] = useState({ code: '', discount_percent: '', max_uses: '', expires_at: '' })
+  const [promoError, setPromoError] = useState('')
 
   useEffect(() => {
     if (!loading && !user) navigate('/auth')
@@ -81,6 +86,31 @@ export default function AdminPage() {
       })
     }
   }, [tab, user])
+
+  useEffect(() => {
+    if (user && tab === 'promos') {
+      api.orders.promos().then(data => setPromos(data.promos || []))
+    }
+  }, [tab, user])
+
+  const handlePromoCreate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPromoError('')
+    const res = await api.orders.createPromo({
+      code: promoForm.code.trim().toUpperCase(),
+      discount_percent: Number(promoForm.discount_percent),
+      max_uses: promoForm.max_uses ? Number(promoForm.max_uses) : null,
+      expires_at: promoForm.expires_at || null,
+    })
+    if (res.error) { setPromoError(res.error); return }
+    setPromos(prev => [res, ...prev])
+    setPromoForm({ code: '', discount_percent: '', max_uses: '', expires_at: '' })
+  }
+
+  const handlePromoToggle = async (id: number, is_active: boolean) => {
+    await api.orders.togglePromo(id, is_active)
+    setPromos(prev => prev.map(p => p.id === id ? { ...p, is_active } : p))
+  }
 
   const handleRoleChange = async (userId: number, role: string) => {
     setRoleChanging(userId)
@@ -215,6 +245,13 @@ export default function AdminPage() {
           >
             <Icon name="Users" size={14} className="inline mr-1.5" />
             Пользователи
+          </button>
+          <button
+            onClick={() => setTab('promos')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === 'promos' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+          >
+            <Icon name="Tag" size={14} className="inline mr-1.5" />
+            Промокоды
           </button>
         </div>
 
@@ -452,6 +489,85 @@ export default function AdminPage() {
             )}
           </div>
         </div>}
+
+        {tab === 'promos' && (
+          <div className="max-w-2xl space-y-6">
+            <Card>
+              <CardHeader><CardTitle className="text-base">Создать промокод</CardTitle></CardHeader>
+              <CardContent>
+                <form onSubmit={handlePromoCreate} className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input
+                      placeholder="Код (напр. SALE20)"
+                      value={promoForm.code}
+                      onChange={e => setPromoForm(p => ({ ...p, code: e.target.value.toUpperCase() }))}
+                      required
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Скидка %"
+                      min={1}
+                      max={100}
+                      value={promoForm.discount_percent}
+                      onChange={e => setPromoForm(p => ({ ...p, discount_percent: e.target.value }))}
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input
+                      type="number"
+                      placeholder="Макс. использований (необязательно)"
+                      min={1}
+                      value={promoForm.max_uses}
+                      onChange={e => setPromoForm(p => ({ ...p, max_uses: e.target.value }))}
+                    />
+                    <Input
+                      type="date"
+                      placeholder="Срок действия (необязательно)"
+                      value={promoForm.expires_at}
+                      onChange={e => setPromoForm(p => ({ ...p, expires_at: e.target.value }))}
+                    />
+                  </div>
+                  {promoError && <p className="text-sm text-destructive">{promoError}</p>}
+                  <Button type="submit"><Icon name="Plus" size={14} className="mr-1.5" />Создать</Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            <div className="space-y-3">
+              {promos.length === 0 && (
+                <Card className="border-dashed">
+                  <CardContent className="py-12 text-center text-muted-foreground">
+                    <Icon name="Tag" className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                    <p>Промокодов пока нет</p>
+                  </CardContent>
+                </Card>
+              )}
+              {promos.map(p => (
+                <Card key={p.id} className={!p.is_active ? 'opacity-50' : ''}>
+                  <CardContent className="p-4 flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono font-bold text-primary text-lg">{p.code}</span>
+                      <Badge variant="secondary">-{p.discount_percent}%</Badge>
+                      {!p.is_active && <Badge variant="outline">Выключен</Badge>}
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-0.5">
+                      <p>Использований: {p.used_count}{p.max_uses ? ` / ${p.max_uses}` : ''}</p>
+                      {p.expires_at && <p>До: {new Date(p.expires_at).toLocaleDateString('ru-RU')}</p>}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant={p.is_active ? 'outline' : 'default'}
+                      onClick={() => handlePromoToggle(p.id, !p.is_active)}
+                    >
+                      {p.is_active ? 'Выключить' : 'Включить'}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

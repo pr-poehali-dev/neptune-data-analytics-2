@@ -41,12 +41,19 @@ export const api = {
   orders: {
     stats: () => fetch(`${ORDERS_URL}?action=stats`).then(r => r.json()),
     list: () => req(ORDERS_URL),
-    create: (data: { title: string; description: string }) =>
+    create: (data: { title: string; description: string; promo_code?: string }) =>
       req(ORDERS_URL, 'POST', { ...data, action: 'create' }),
+    checkPromo: (code: string) =>
+      req(ORDERS_URL, 'POST', { action: 'check_promo', code }),
     setStatus: (id: number, status: string) =>
       req(ORDERS_URL, 'PUT', { id, status, action: 'status' }),
     setFile: (id: number, file_url: string) =>
       req(ORDERS_URL, 'PUT', { id, file_url, action: 'file' }),
+    promos: () => req(`${ORDERS_URL}?action=promos`),
+    createPromo: (data: { code: string; discount_percent: number; max_uses?: number | null; expires_at?: string | null }) =>
+      req(ORDERS_URL, 'POST', { ...data, action: 'promo_create' }),
+    togglePromo: (id: number, is_active: boolean) =>
+      req(ORDERS_URL, 'PUT', { id, is_active, action: 'promo_toggle' }),
   },
   chat: {
     messages: (orderId: number) => req(`${CHAT_URL}?order_id=${orderId}`),

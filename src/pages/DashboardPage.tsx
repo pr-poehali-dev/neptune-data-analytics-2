@@ -20,6 +20,7 @@ const STATUS_LABELS: Record<string, { label: string; variant: 'default' | 'secon
 type Order = {
   id: number; title: string; description: string; status: string
   file_url: string | null; created_at: string; updated_at: string
+  promo_code?: string | null; discount_percent?: number
 }
 type Message = { id: number; text: string; created_at: string; sender_name: string; sender_role: string }
 
@@ -174,6 +175,13 @@ export default function DashboardPage() {
                       </div>
                       <Badge variant={s.variant}>{s.label}</Badge>
                     </div>
+                    {order.promo_code && (
+                      <div className="mt-2 flex items-center gap-1.5">
+                        <Icon name="Tag" className="h-3 w-3 text-green-600" />
+                        <span className="text-xs font-mono text-green-600">{order.promo_code}</span>
+                        <span className="text-xs text-green-600 font-medium">−{order.discount_percent}%</span>
+                      </div>
+                    )}
                     {order.file_url && (
                       <a href={order.file_url} target="_blank" rel="noopener noreferrer"
                         className="mt-3 flex items-center gap-1 text-xs text-primary hover:underline"

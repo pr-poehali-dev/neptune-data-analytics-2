@@ -21,6 +21,7 @@ const STATUS_LABELS: Record<string, { label: string; variant: 'default' | 'secon
 type Order = {
   id: number; title: string; description: string; status: string
   file_url: string | null; created_at: string; client_name: string; client_email: string
+  promo_code?: string | null; discount_percent?: number
 }
 type Message = { id: number; text: string; created_at: string; sender_name: string; sender_role: string }
 type Ticket = { id: number; name: string; email: string; subject: string; status: string; created_at: string }
@@ -411,6 +412,13 @@ export default function AdminPage() {
                         <p className="font-semibold truncate">{order.title}</p>
                         <p className="text-xs text-muted-foreground">{order.client_name} · {order.client_email}</p>
                         <p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleDateString('ru')}</p>
+                        {order.promo_code && (
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <Icon name="Tag" className="h-3 w-3 text-green-600" />
+                            <span className="text-xs font-mono text-green-600">{order.promo_code}</span>
+                            <span className="text-xs text-green-600 font-medium">−{order.discount_percent}%</span>
+                          </div>
+                        )}
                       </div>
                       <Badge variant={s.variant}>{s.label}</Badge>
                     </div>
